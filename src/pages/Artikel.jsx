@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import LoadingIndicator from "../components/LoadingIndicator";
-import { fetchData } from "../admin/api/apiService";
+import { fetchDataPagination } from "../admin/api/apiService";
 
 const Artikel = () => {
   const [loading, setLoading] = useState(true);
@@ -8,26 +8,26 @@ const Artikel = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
+  const [totalPages, setTotalPages] = useState(null);
 
+  const loadArticles = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetchDataPagination("article", currentPage, itemsPerPage);
+      setArticles(response.data.reverse());
+      setCurrentPage( response.currentPage )
+      setTotalPages( response.totalPages )
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage] );
+  
   useEffect(() => {
-    const loadArticles = async () => {
-      setLoading(true);
-      try {
-        const response = await fetchData("article");
-        setArticles(response.reverse());
-        setArticles(response);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
 
     loadArticles();
-  }, []);
-
-  const currentPageData = articles.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const totalPages = Math.ceil(articles.length / itemsPerPage);
+  }, [loadArticles]);
 
   if (loading) {
     return <LoadingIndicator />;
@@ -61,7 +61,7 @@ const Artikel = () => {
         </div>
         <div className="mt-5 px-4 sm:px-6 lg:px-8 max-w-screen-xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {currentPageData.map((article) => (
+            {articles.map((article) => (
               <div key={article.id} className="bg-white shadow-custom rounded-custom-br overflow-hidden">
                 <img
                   src={article.picture}
@@ -97,17 +97,17 @@ const Artikel = () => {
               </button>
             )}
 
-            {Array.from({ length: 5 }, (_, index) => {
+            {Array.from({ length: totalPages }, (_, index) => {
               const pageNumber = Math.max(1, currentPage - 2) + index;
               if (pageNumber <= totalPages) {
                 return (
                   <button
-                    key={pageNumber}
-                    onClick={() => setCurrentPage(pageNumber)}
-                    className={`px-3 py-1 rounded ${
-                      currentPage === pageNumber ? "bg-sumod-bl3 text-white" : "bg-gray-200"
+                  key={pageNumber}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === pageNumber ? "bg-sumod-bl3 text-white" : "bg-gray-200"
                     }`}
-                  >
+                    >
                     {pageNumber}
                   </button>
                 );

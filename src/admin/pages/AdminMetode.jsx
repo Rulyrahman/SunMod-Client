@@ -146,7 +146,7 @@ const AdminMetode = () => {
             assets.map((asset) => (
               <div
                 key={asset.id}
-                className="p-4 rounded-custom-br overflow-hidden bg-slate-50 shadow-lg w-[325px] md:w-[350px] lg:w-[325px] xl:w-[380px] h-auto"
+                className="p-4 rounded-custom-br overflow-hidden bg-slate-50 shadow-lg w-auto sm:w-[350px] lg:w-[325px] xl:w-[300px] 2xl:w-[380] h-auto"
               >
                 <img src={asset.picture} alt={asset.name} className="rounded-custom-br object-cover mb-2 mx-auto" />
                 <div>

@@ -42,6 +42,21 @@ export const fetchData = async (tableName) => {
   }
 };
 
+export const fetchDataPagination = async (tableName, page = 1, pageSize = 10) => {
+  try {
+    const response = await axiosInstance.get(`${tableName}`, {
+      params: {
+        page: page,
+        limit: pageSize,
+      },
+    });
+    return response.data
+  } catch (error) {
+    console.error(`Error fetching data from ${tableName}:`, error);
+    throw error;
+  }
+};
+
 export const updateData = async (tableName, id, formData) => {
   try {
     const response = await axiosInstance.put(`${tableName}/${id}`, formData, {

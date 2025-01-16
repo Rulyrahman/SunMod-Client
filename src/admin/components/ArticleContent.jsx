@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { fetchData, updateData, deleteArticle } from "../api/apiService";
+import React, { useState, useEffect, useCallback } from "react";
+import { updateData, deleteArticle, fetchDataPagination } from "../api/apiService";
 import { ListBulletIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-toastify";
 import { BallTriangle } from "react-loading-icons";
@@ -19,7 +19,8 @@ const AdminArtikel = () => {
   const [pictError, setPictError] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(3);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [totalPages, setTotalPages] = useState(null);
 
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -30,17 +31,19 @@ const AdminArtikel = () => {
 
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  const loadAssets = async () => {
+  const loadAssets = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetchData("article");
-      setAssets(response.reverse());
+      const response = await fetchDataPagination("article", currentPage, itemsPerPage);
+      setAssets(response.data.reverse());
+      setCurrentPage(response.currentPage);
+      setTotalPages(response.totalPages);
       setLoading(false);
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
-  };
+  }, [currentPage, itemsPerPage]);
 
   const handleUpdate = async (id) => {
     let isValid = true;
@@ -168,9 +171,6 @@ const AdminArtikel = () => {
     setSelectedAssetDel(null);
   };
 
-  const currentPageData = assets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const totalPages = Math.ceil(assets.length / itemsPerPage);
-
   useEffect(() => {
     const handleResize = () => {
       const isSmallScreen = window.matchMedia("(max-width: 640px)").matches;
@@ -186,7 +186,7 @@ const AdminArtikel = () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
     };
-  }, []);
+  }, [loadAssets]);
 
   if (loading) return <p className="flex justify-center items-center ">Loading...</p>;
   if (error) return <p className="flex justify-center items-center">Error: {error}</p>;
@@ -196,8 +196,8 @@ const AdminArtikel = () => {
       <h2 className="text-xl text-center font-bold mb-4">Artikel Sumod</h2>
       <div className="flex justify-center w-full">
         <div className="mb-8 space-y-4 w-full max-w-6xl px-4">
-          {Array.isArray(currentPageData) &&
-            currentPageData.map((asset) => (
+          {Array.isArray(assets) &&
+            assets.map((asset) => (
               <div
                 key={asset.id}
                 className="flex flex-col md:flex-row lg:flex-col xl:flex-row justify-center items-start p-6 rounded-lg overflow-hidden bg-slate-50 border border-sumod-bl3 shadow-md"
@@ -256,41 +256,66 @@ const AdminArtikel = () => {
       </div>
 
       <div className="flex justify-center space-x-2 mb-4">
-        {currentPage > 3 && (
-          <button
-            onClick={() => setCurrentPage(currentPage - 1)}
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-          >
-            &lt;
-          </button>
-        )}
+        
+        <div className="space-x-2">
+          {currentPage > 3 && (
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            >
+              &lt;
+            </button>
+          )}
 
-        {Array.from({ length: 5 }, (_, index) => {
-          const pageNumber = Math.max(1, currentPage - 2) + index;
-          if (pageNumber <= totalPages) {
-            return (
-              <button
+          {Array.from({ length: totalPages }, (_, index) => {
+            const pageNumber = Math.max(1, currentPage - 2) + index;
+            if (pageNumber <= totalPages) {
+              return (
+                <button
                 key={pageNumber}
                 onClick={() => setCurrentPage(pageNumber)}
                 className={`px-3 py-1 rounded ${
                   currentPage === pageNumber ? "bg-sumod-bl3 text-white" : "bg-gray-200"
-                }`}
-              >
-                {pageNumber}
-              </button>
-            );
-          }
-          return null;
-        })}
+                  }`}
+                  >
+                  {pageNumber}
+                </button>
+              );
+            }
+            return null;
+          })}
 
-        {currentPage < totalPages - 2 && (
-          <button
-            onClick={() => setCurrentPage(currentPage + 1)}
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-          >
-            &gt;
-          </button>
-        )}
+          {currentPage < totalPages - 2 && (
+            <button
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            >
+              &gt;
+            </button>
+          )}
+        </div>
+        <div>
+          <div className="ms-10 mb-4">
+            <label htmlFor="itemsPerPage" className="mr-2 font-bold">
+              Items per page:
+            </label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1); // Reset ke halaman pertama
+              }}
+              className="px-2 py-1 border rounded"
+            >
+              <option value={3}>3</option>
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {showModal && (
