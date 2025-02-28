@@ -15,6 +15,12 @@ const Navbar = () => {
     { name: "Kontak", path: "/Kontak" },
   ];
 
+  const handleMenuItemClick = () => {
+    if (window.innerWidth < 768) {
+      setIsOpen(false);
+    }
+  };
+
   return (
     <header className="container mx-auto lg:mt-4 lg:mb-8">
       <nav className="flex justify-between items-center w-full max-w-screen-2xl mx-auto mt-5 p-2 md:p-0">
@@ -41,6 +47,7 @@ const Navbar = () => {
               className={`menu-item-path block md:inline-block text-custom-black hover:text-custom-blue transition duration-300 text-xl md:text-lg lg:text-2xl relative 
                 ${location.pathname === item.path ? "text-custom-blue" : "text-custom-black"} 
                 `}
+              onClick={handleMenuItemClick}
             >
               {item.name}
             </Link>
